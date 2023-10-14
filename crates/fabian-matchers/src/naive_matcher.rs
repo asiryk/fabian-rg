@@ -27,6 +27,10 @@ impl Matcher for NaiveMatcher {
         let needle = &self.needle[..];
         let haystack = &haystack[at..];
 
+        if haystack.len() < needle.len() {
+            return Ok(None)
+        }
+
         for i in 0..(haystack.len() - needle.len() + 1) {
             let hay = haystack[i..(i + needle.len())].iter();
 

@@ -25,7 +25,7 @@ use {
         searcher::{
             BinaryDetection, Encoding, MmapChoice, Searcher, SearcherBuilder,
         },
-        fabian::RabinKarpMatcher,
+        fabian::*,
     },
     ignore::{
         overrides::{Override, OverrideBuilder},
