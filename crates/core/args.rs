@@ -25,6 +25,7 @@ use {
         searcher::{
             BinaryDetection, Encoding, MmapChoice, Searcher, SearcherBuilder,
         },
+        fabian::RabinKarpMatcher,
     },
     ignore::{
         overrides::{Override, OverrideBuilder},
@@ -597,7 +598,9 @@ impl ArgMatches {
     /// If there was a problem building the matcher (e.g., a syntax error),
     /// then this returns an error.
     fn matcher(&self, patterns: &[String]) -> Result<PatternMatcher> {
-        if self.is_present("pcre2") {
+        if self.is_present("fabian") {
+            self.matcher_engine("fabian", patterns)
+        } else if self.is_present("pcre2") {
             self.matcher_engine("pcre2", patterns)
         } else if self.is_present("auto-hybrid-regex") {
             self.matcher_engine("auto", patterns)
@@ -618,6 +621,18 @@ impl ArgMatches {
         patterns: &[String],
     ) -> Result<PatternMatcher> {
         match engine {
+            "fabian" => {
+                match patterns.get(0) {
+                    Some(pattern) => {
+                        let pattern = Arc::new(pattern.as_bytes().to_vec());
+                        let matcher = RabinKarpMatcher::new(&pattern);
+                        Ok(PatternMatcher::FabianMatcher(matcher))
+                    },
+                    None => Err(From::from(
+                        format!("fabian matcher can't handle empty pattern")
+                    ))
+                }
+            }
             "default" => {
                 let matcher = match self.matcher_rust(patterns) {
                     Ok(matcher) => matcher,

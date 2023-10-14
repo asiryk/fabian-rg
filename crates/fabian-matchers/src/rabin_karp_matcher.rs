@@ -3,6 +3,7 @@ use std::sync::Arc;
 use grep_matcher::{Match, Matcher, NoCaptures, NoError};
 use hash::{Hash, NeedleHash};
 
+#[derive(Debug)]
 pub struct RabinKarpMatcher {
     needle: Arc<Vec<u8>>,
 }
@@ -15,6 +16,12 @@ impl RabinKarpMatcher {
     /// Compare byte-by-byte (naive search) by haystack.
     fn cmp_needle_bytes(&self, haystack: &[u8]) -> bool {
         self.needle.iter().zip(haystack).all(|(a, b)| a.eq(b))
+    }
+}
+
+impl Clone for RabinKarpMatcher {
+    fn clone(&self) -> Self {
+        RabinKarpMatcher::new(&self.needle)
     }
 }
 

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use grep_matcher::{Match, Matcher, NoCaptures, NoError};
 
+#[derive(Debug)]
 pub struct NaiveMatcher {
     needle: Arc<Vec<u8>>,
 }
@@ -9,6 +10,12 @@ pub struct NaiveMatcher {
 impl NaiveMatcher {
     pub fn new(needle: &Arc<Vec<u8>>) -> Self {
         NaiveMatcher { needle: Arc::clone(needle) }
+    }
+}
+
+impl Clone for NaiveMatcher {
+    fn clone(&self) -> Self {
+        NaiveMatcher::new(&self.needle)
     }
 }
 

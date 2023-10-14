@@ -11,6 +11,7 @@ use {
         printer::{Standard, Stats, Summary, JSON},
         regex::RegexMatcher as RustRegexMatcher,
         searcher::{BinaryDetection, Searcher},
+        fabian::*,
     },
     ignore::overrides::Override,
     serde_json::{self as json, json},
@@ -214,6 +215,7 @@ impl SearchResult {
 /// The pattern matcher used by a search worker.
 #[derive(Clone, Debug)]
 pub enum PatternMatcher {
+    FabianMatcher(RabinKarpMatcher),
     RustRegex(RustRegexMatcher),
     #[cfg(feature = "pcre2")]
     PCRE2(PCRE2RegexMatcher),
@@ -443,6 +445,7 @@ impl<W: WriteColor> SearchWorker<W> {
 
         let (searcher, printer) = (&mut self.searcher, &mut self.printer);
         match self.matcher {
+            FabianMatcher(ref m) => search_path(m, searcher, printer, path),
             RustRegex(ref m) => search_path(m, searcher, printer, path),
             #[cfg(feature = "pcre2")]
             PCRE2(ref m) => search_path(m, searcher, printer, path),
@@ -467,6 +470,7 @@ impl<W: WriteColor> SearchWorker<W> {
 
         let (searcher, printer) = (&mut self.searcher, &mut self.printer);
         match self.matcher {
+            FabianMatcher(ref m) => search_reader(m, searcher, printer, path, rdr),
             RustRegex(ref m) => search_reader(m, searcher, printer, path, rdr),
             #[cfg(feature = "pcre2")]
             PCRE2(ref m) => search_reader(m, searcher, printer, path, rdr),

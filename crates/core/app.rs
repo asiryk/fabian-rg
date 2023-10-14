@@ -619,6 +619,7 @@ pub fn all_args_and_flags() -> Vec<RGArg> {
     flag_only_matching(&mut args);
     flag_path_separator(&mut args);
     flag_passthru(&mut args);
+    flag_fabian(&mut args);
     flag_pcre2(&mut args);
     flag_pcre2_version(&mut args);
     flag_pre(&mut args);
@@ -2519,6 +2520,19 @@ This overrides the --context, --after-context and --before-context flags.
         .overrides("context");
     args.push(arg);
 }
+
+fn flag_fabian(args: &mut Vec<RGArg>) {
+    const SHORT: &str = "Enable experimental Fabian matchers.";
+    let arg = RGArg::switch("fabian")
+        .help(SHORT)
+        .long_help(SHORT)
+        .overrides("pcre2")
+        .overrides("auto-hybrid-regex")
+        .overrides("no-auto-hybrid-regex")
+        .overrides("engine");
+    args.push(arg);
+}
+
 
 fn flag_pcre2(args: &mut Vec<RGArg>) {
     const SHORT: &str = "Enable PCRE2 matching.";
