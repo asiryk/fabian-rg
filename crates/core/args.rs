@@ -57,6 +57,10 @@ pub enum Command {
     Search,
     /// Search using possibly many threads.
     SearchParallel,
+    /// Search using possibly many threads to search a single file.
+    /// The parallelism is used to split the file line-by-line instead
+    /// of using parallelism to search many files at the same time.
+    SearchParallelFile,
     /// The command line parameters suggest that a search should occur, but
     /// ripgrep knows that a match can never be found (e.g., no given patterns
     /// or --max-count=0).
@@ -80,7 +84,7 @@ impl Command {
         use self::Command::*;
 
         match *self {
-            Search | SearchParallel => true,
+            Search | SearchParallel | SearchParallelFile => true,
             SearchNever | Files | FilesParallel | Types | PCRE2Version => {
                 false
             }
@@ -547,6 +551,7 @@ impl ArgMatches {
         };
         // Now figure out the number of threads we'll use and which
         // command will run.
+        // todo: add 1 more branch if search parallel file is enabled
         let is_one_search = self.is_one_search(&paths);
         let threads = if is_one_search { 1 } else { self.threads()? };
         if threads == 1 {

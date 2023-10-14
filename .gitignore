@@ -8,6 +8,7 @@ target
 /wincolor/Cargo.lock
 /deployment
 /.idea
+/.DS_Store
 
 # Snapcraft files
 stage
