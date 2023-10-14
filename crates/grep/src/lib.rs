@@ -19,3 +19,4 @@ pub extern crate grep_pcre2 as pcre2;
 pub extern crate grep_printer as printer;
 pub extern crate grep_regex as regex;
 pub extern crate grep_searcher as searcher;
+pub extern crate fabian_matchers as fabian;

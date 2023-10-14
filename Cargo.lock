@@ -161,6 +161,7 @@ dependencies = [
 name = "grep"
 version = "0.2.12"
 dependencies = [
+ "fabian-matchers",
  "grep-cli",
  "grep-matcher",
  "grep-pcre2",

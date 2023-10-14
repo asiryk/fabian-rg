@@ -20,6 +20,7 @@ grep-pcre2 = { version = "0.1.6", path = "../pcre2", optional = true }
 grep-printer = { version = "0.1.7", path = "../printer" }
 grep-regex = { version = "0.1.11", path = "../regex" }
 grep-searcher = { version = "0.1.11", path = "../searcher" }
+fabian-matchers = { version = "*", path = "../fabian-matchers" }
 
 [dev-dependencies]
 termcolor = "1.0.4"
