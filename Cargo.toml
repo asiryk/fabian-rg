@@ -46,6 +46,7 @@ members = [
   "crates/regex",
   "crates/searcher",
   "crates/ignore",
+  "crates/fabian-matchers",
 ]
 
 [dependencies]

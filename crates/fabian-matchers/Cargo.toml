@@ -1,0 +1,7 @@
+[package]
+name = "fabian-matchers"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+grep-matcher = { version = "*", path = "../matcher" }
