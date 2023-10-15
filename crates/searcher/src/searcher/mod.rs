@@ -634,6 +634,7 @@ impl Searcher {
     {
         let path = path.as_ref();
         let file = File::open(path).map_err(S::Error::error_io)?;
+        log::trace!("[ripgrep] searcher started for file: {:?}", &path);
         self.search_file_maybe_path(matcher, Some(path), &file, write_to)
     }
 

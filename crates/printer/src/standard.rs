@@ -813,6 +813,7 @@ impl<'p, 's, M: Matcher, W: WriteColor> Sink for StandardSink<'p, 's, M, W> {
         mat: &SinkMatch<'_>,
     ) -> Result<bool, io::Error> {
         self.match_count += 1;
+        log::trace!("[ripgrep] inside standard sink matched");
         // When we've exceeded our match count, then the remaining context
         // lines should not be reset, but instead, decremented. This avoids a
         // bug where we display more matches than a configured limit. The main

@@ -620,6 +620,7 @@ pub fn all_args_and_flags() -> Vec<RGArg> {
     flag_path_separator(&mut args);
     flag_passthru(&mut args);
     flag_fabian(&mut args);
+    flag_parallel_searcher(&mut args);
     flag_pcre2(&mut args);
     flag_pcre2_version(&mut args);
     flag_pre(&mut args);
@@ -2523,7 +2524,7 @@ This overrides the --context, --after-context and --before-context flags.
 
 fn flag_fabian(args: &mut Vec<RGArg>) {
     const SHORT: &str = "Enable experimental Fabian matchers.";
-    let arg = RGArg::switch("fabian")
+    let arg = RGArg::switch("fabian-matcher")
         .help(SHORT)
         .long_help(SHORT)
         .overrides("pcre2")
@@ -2533,6 +2534,16 @@ fn flag_fabian(args: &mut Vec<RGArg>) {
     args.push(arg);
 }
 
+fn flag_parallel_searcher(args: &mut Vec<RGArg>) {
+    const SHORT: &str = "Enable experimental search for single file in parallel";
+    let arg = RGArg::switch("parallel-searcher")
+        .help(SHORT)
+        .long_help(SHORT)
+        .overrides("pcre2-version")
+        .overrides("type-list")
+        .overrides("files");
+    args.push(arg);
+}
 
 fn flag_pcre2(args: &mut Vec<RGArg>) {
     const SHORT: &str = "Enable PCRE2 matching.";

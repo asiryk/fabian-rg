@@ -293,6 +293,7 @@ impl<'s, M: Matcher, S: Sink> Core<'s, M, S> {
                 if !self.before_context_by_line(buf, line.start())? {
                     return Ok(false);
                 }
+                log::trace!("[ripgrep] searcher calls sink matched {:?}", &line);
                 if !self.sink_matched(buf, &line)? {
                     return Ok(false);
                 }
@@ -465,21 +466,21 @@ impl<'s, M: Matcher, S: Sink> Core<'s, M, S> {
         self.count_lines(buf, range.start());
         let offset = self.absolute_byte_offset + range.start() as u64;
         let linebuf = &buf[*range];
-        let keepgoing = self.sink.matched(
-            &self.searcher,
-            &SinkMatch {
-                line_term: self.config.line_term,
-                bytes: linebuf,
-                absolute_byte_offset: offset,
-                line_number: self.line_number,
-                buffer: buf,
-                bytes_range_in_buffer: range.start()..range.end(),
-            },
-        )?;
+        let sink_match = &SinkMatch {
+            line_term: self.config.line_term,
+            bytes: linebuf,
+            absolute_byte_offset: offset,
+            line_number: self.line_number,
+            buffer: buf,
+            bytes_range_in_buffer: range.start()..range.end(),
+        };
+        let keepgoing = self.sink.matched(&self.searcher, sink_match)?;
+
         if !keepgoing {
             return Ok(false);
         }
         self.last_line_visited = range.end();
+        log::trace!("[ripgrep] last line visited = {}", self.last_line_visited);
         self.after_context_left = self.config.after_context;
         self.has_sunk = true;
         Ok(true)
@@ -598,6 +599,7 @@ impl<'s, M: Matcher, S: Sink> Core<'s, M, S> {
             let slice = &buf[self.last_line_counted..upto];
             let count = lines::count(slice, self.config.line_term.as_byte());
             *line_number += count;
+            log::trace!("[ripgrep] count lines: count={}, line_number={}", count, line_number);
             self.last_line_counted = upto;
         }
     }

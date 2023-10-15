@@ -40,6 +40,7 @@ use grep::pcre2::{
     RegexMatcher as PCRE2RegexMatcher,
     RegexMatcherBuilder as PCRE2RegexMatcherBuilder,
 };
+use grep::searcher::{ParallelSearcher, SearcherImpl};
 
 use crate::{
     app, config,
@@ -58,10 +59,6 @@ pub enum Command {
     Search,
     /// Search using possibly many threads.
     SearchParallel,
-    /// Search using possibly many threads to search a single file.
-    /// The parallelism is used to split the file line-by-line instead
-    /// of using parallelism to search many files at the same time.
-    SearchParallelFile,
     /// The command line parameters suggest that a search should occur, but
     /// ripgrep knows that a match can never be found (e.g., no given patterns
     /// or --max-count=0).
@@ -85,7 +82,7 @@ impl Command {
         use self::Command::*;
 
         match *self {
-            Search | SearchParallel | SearchParallelFile => true,
+            Search | SearchParallel => true,
             SearchNever | Files | FilesParallel | Types | PCRE2Version => {
                 false
             }
@@ -272,7 +269,12 @@ impl Args {
         let matches = self.matches();
         let matcher = self.matcher().clone();
         let printer = self.printer(wtr)?;
-        let searcher = matches.searcher(self.paths())?;
+        let searcher_impl = if matches.is_present("parallel-searcher") {
+            log::debug!("[ripgrep] using experimental parallel searcher");
+            SearcherImpl::Parallel(ParallelSearcher::new())
+        } else {
+            SearcherImpl::Default(matches.searcher(self.paths())?)
+        };
         let mut builder = SearchWorkerBuilder::new();
         builder
             .json_stats(matches.is_present("json"))
@@ -281,7 +283,8 @@ impl Args {
             .search_zip(matches.is_present("search-zip"))
             .binary_detection_implicit(matches.binary_detection_implicit())
             .binary_detection_explicit(matches.binary_detection_explicit());
-        Ok(builder.build(matcher, searcher, printer))
+
+        Ok(builder.build(matcher, searcher_impl, printer))
     }
 
     /// Returns a zero value for tracking statistics if and only if it has been
@@ -552,9 +555,9 @@ impl ArgMatches {
         };
         // Now figure out the number of threads we'll use and which
         // command will run.
-        // todo: add 1 more branch if search parallel file is enabled
+        let is_fabian_parallel = self.is_present("parallel-searcher");
         let is_one_search = self.is_one_search(&paths);
-        let threads = if is_one_search { 1 } else { self.threads()? };
+        let threads = if is_one_search && !is_fabian_parallel { 1 } else { self.threads()? };
         if threads == 1 {
             log::debug!("running in single threaded mode");
         } else {
@@ -572,7 +575,7 @@ impl ArgMatches {
             }
         } else if self.can_never_match(&patterns) {
             Command::SearchNever
-        } else if threads == 1 {
+        } else if threads == 1 || is_fabian_parallel {
             Command::Search
         } else {
             Command::SearchParallel
@@ -598,7 +601,7 @@ impl ArgMatches {
     /// If there was a problem building the matcher (e.g., a syntax error),
     /// then this returns an error.
     fn matcher(&self, patterns: &[String]) -> Result<PatternMatcher> {
-        if self.is_present("fabian") {
+        if self.is_present("fabian-matcher") {
             self.matcher_engine("fabian", patterns)
         } else if self.is_present("pcre2") {
             self.matcher_engine("pcre2", patterns)

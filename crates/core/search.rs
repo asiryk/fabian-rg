@@ -20,6 +20,7 @@ use {
 
 #[cfg(feature = "pcre2")]
 use grep::pcre2::RegexMatcher as PCRE2RegexMatcher;
+use grep::searcher::SearcherImpl;
 
 use crate::subject::Subject;
 
@@ -84,7 +85,7 @@ impl SearchWorkerBuilder {
     pub fn build<W: WriteColor>(
         &self,
         matcher: PatternMatcher,
-        searcher: Searcher,
+        searcher_impl: SearcherImpl,
         printer: Printer<W>,
     ) -> SearchWorker<W> {
         let config = self.config.clone();
@@ -95,7 +96,7 @@ impl SearchWorkerBuilder {
             command_builder,
             decomp_builder,
             matcher,
-            searcher,
+            searcher_impl,
             printer,
         }
     }
@@ -324,7 +325,7 @@ pub struct SearchWorker<W> {
     command_builder: cli::CommandReaderBuilder,
     decomp_builder: cli::DecompressionReaderBuilder,
     matcher: PatternMatcher,
-    searcher: Searcher,
+    searcher_impl: SearcherImpl,
     printer: Printer<W>,
 }
 
@@ -339,7 +340,9 @@ impl<W: WriteColor> SearchWorker<W> {
         let path = subject.path();
         log::trace!("{}: binary detection: {:?}", path.display(), bin);
 
-        self.searcher.set_binary_detection(bin);
+        if let SearcherImpl::Default(searcher) = &mut self.searcher_impl {
+            searcher.set_binary_detection(bin);
+        }
         if subject.is_stdin() {
             self.search_reader(path, &mut io::stdin().lock())
         } else if self.should_preprocess(path) {
@@ -443,12 +446,19 @@ impl<W: WriteColor> SearchWorker<W> {
     fn search_path(&mut self, path: &Path) -> io::Result<SearchResult> {
         use self::PatternMatcher::*;
 
-        let (searcher, printer) = (&mut self.searcher, &mut self.printer);
-        match self.matcher {
-            FabianMatcher(ref m) => search_path(m, searcher, printer, path),
-            RustRegex(ref m) => search_path(m, searcher, printer, path),
-            #[cfg(feature = "pcre2")]
-            PCRE2(ref m) => search_path(m, searcher, printer, path),
+        let (searcher_impl, printer) = (&mut self.searcher_impl, &mut self.printer);
+        match searcher_impl {
+            SearcherImpl::Default(searcher) => {
+                match self.matcher {
+                    FabianMatcher(ref m) => search_path(m, searcher, printer, path),
+                    RustRegex(ref m) => search_path(m, searcher, printer, path),
+                    #[cfg(feature = "pcre2")]
+                    PCRE2(ref m) => search_path(m, searcher, printer, path),
+                }
+            }
+            SearcherImpl::Parallel(_searcher) =>{
+                todo!("need to implement search_path method");
+            },
         }
     }
 
@@ -468,12 +478,18 @@ impl<W: WriteColor> SearchWorker<W> {
     ) -> io::Result<SearchResult> {
         use self::PatternMatcher::*;
 
-        let (searcher, printer) = (&mut self.searcher, &mut self.printer);
-        match self.matcher {
-            FabianMatcher(ref m) => search_reader(m, searcher, printer, path, rdr),
-            RustRegex(ref m) => search_reader(m, searcher, printer, path, rdr),
-            #[cfg(feature = "pcre2")]
-            PCRE2(ref m) => search_reader(m, searcher, printer, path, rdr),
+        let (searcher_impl, printer) = (&mut self.searcher_impl, &mut self.printer);
+
+        match searcher_impl {
+            SearcherImpl::Default(searcher) => {
+                match self.matcher {
+                    FabianMatcher(ref m) => search_reader(m, searcher, printer, path, rdr),
+                    RustRegex(ref m) => search_reader(m, searcher, printer, path, rdr),
+                    #[cfg(feature = "pcre2")]
+                    PCRE2(ref m) => search_reader(m, searcher, printer, path, rdr),
+                }
+            }
+            _ => unimplemented!("search_reader doesn't support parallel searcher"),
         }
     }
 }

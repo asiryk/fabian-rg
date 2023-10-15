@@ -89,6 +89,7 @@ pub use crate::{
         BinaryDetection, ConfigError, Encoding, MmapChoice, Searcher,
         SearcherBuilder,
     },
+    searcher_parallel::ParallelSearcher,
     sink::{
         sinks, Sink, SinkContext, SinkContextKind, SinkError, SinkFinish,
         SinkMatch,
@@ -101,6 +102,16 @@ mod macros;
 mod line_buffer;
 mod lines;
 mod searcher;
+mod searcher_parallel;
 mod sink;
 #[cfg(test)]
 mod testutil;
+
+/// Implementation of file searcher
+#[derive(Debug)]
+pub enum SearcherImpl {
+    /// Single-threaded file searcher
+    Default(Searcher),
+    /// Parallel file searcher
+    Parallel(ParallelSearcher),
+}

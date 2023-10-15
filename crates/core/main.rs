@@ -55,7 +55,6 @@ fn try_main(args: Args) -> Result<()> {
     let matched = match args.command() {
         Search => search(&args),
         SearchParallel => search_parallel(&args),
-        SearchParallelFile => todo!(),
         SearchNever => Ok(false),
         Files => files(&args),
         FilesParallel => files_parallel(&args),
