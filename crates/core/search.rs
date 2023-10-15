@@ -11,7 +11,7 @@ use {
         printer::{Standard, Stats, Summary, JSON},
         regex::RegexMatcher as RustRegexMatcher,
         searcher::{BinaryDetection, Searcher},
-        fabian::*,
+        fabian::FabianMatcher,
     },
     ignore::overrides::Override,
     serde_json::{self as json, json},
@@ -215,7 +215,7 @@ impl SearchResult {
 /// The pattern matcher used by a search worker.
 #[derive(Clone, Debug)]
 pub enum PatternMatcher {
-    FabianMatcher(RabinKarpMatcher),
+    FabianMatcher(FabianMatcher),
     RustRegex(RustRegexMatcher),
     #[cfg(feature = "pcre2")]
     PCRE2(PCRE2RegexMatcher),

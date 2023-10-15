@@ -25,7 +25,7 @@ use {
         searcher::{
             BinaryDetection, Encoding, MmapChoice, Searcher, SearcherBuilder,
         },
-        fabian::*,
+        fabian::FabianMatcher,
     },
     ignore::{
         overrides::{Override, OverrideBuilder},
@@ -625,7 +625,8 @@ impl ArgMatches {
                 match patterns.get(0) {
                     Some(pattern) => {
                         let pattern = Arc::new(pattern.as_bytes().to_vec());
-                        let matcher = RabinKarpMatcher::new(&pattern);
+                        let matcher = FabianMatcher::new(&pattern);
+                        log::trace!("[ripgrep] using experimental fabian matcher");
                         Ok(PatternMatcher::FabianMatcher(matcher))
                     },
                     None => Err(From::from(

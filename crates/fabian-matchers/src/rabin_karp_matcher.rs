@@ -30,6 +30,7 @@ impl Matcher for RabinKarpMatcher {
     type Error = NoError;
 
     fn find_at(&self, haystack: &[u8], at: usize) -> Result<Option<Match>, Self::Error> {
+        log::trace!("[fabian] searching rabin-karp at {}", haystack.as_ptr() as usize);
         let needle = &self.needle[..];
         let mut haystack = &haystack[at..];
 

@@ -135,6 +135,7 @@ name = "fabian-matchers"
 version = "0.1.0"
 dependencies = [
  "grep-matcher",
+ "log",
 ]
 
 [[package]]
