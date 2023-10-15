@@ -447,18 +447,11 @@ impl<W: WriteColor> SearchWorker<W> {
         use self::PatternMatcher::*;
 
         let (searcher_impl, printer) = (&mut self.searcher_impl, &mut self.printer);
-        match searcher_impl {
-            SearcherImpl::Default(searcher) => {
-                match self.matcher {
-                    FabianMatcher(ref m) => search_path(m, searcher, printer, path),
-                    RustRegex(ref m) => search_path(m, searcher, printer, path),
-                    #[cfg(feature = "pcre2")]
-                    PCRE2(ref m) => search_path(m, searcher, printer, path),
-                }
-            }
-            SearcherImpl::Parallel(_searcher) =>{
-                todo!("need to implement search_path method");
-            },
+        match self.matcher {
+            FabianMatcher(ref m) => search_path(m, searcher_impl, printer, path),
+            RustRegex(ref m) => search_path(m, searcher_impl, printer, path),
+            #[cfg(feature = "pcre2")]
+            PCRE2(ref m) => search_path(m, searcher_impl, printer, path),
         }
     }
 
@@ -498,14 +491,17 @@ impl<W: WriteColor> SearchWorker<W> {
 /// searcher and printer.
 fn search_path<M: Matcher, W: WriteColor>(
     matcher: M,
-    searcher: &mut Searcher,
+    searcher_impl: &mut SearcherImpl,
     printer: &mut Printer<W>,
     path: &Path,
 ) -> io::Result<SearchResult> {
     match *printer {
         Printer::Standard(ref mut p) => {
             let mut sink = p.sink_with_path(&matcher, path);
-            searcher.search_path(&matcher, path, &mut sink)?;
+            match searcher_impl {
+                SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+                SearcherImpl::Parallel(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+            }
             Ok(SearchResult {
                 has_match: sink.has_match(),
                 stats: sink.stats().map(|s| s.clone()),
@@ -513,7 +509,10 @@ fn search_path<M: Matcher, W: WriteColor>(
         }
         Printer::Summary(ref mut p) => {
             let mut sink = p.sink_with_path(&matcher, path);
-            searcher.search_path(&matcher, path, &mut sink)?;
+            match searcher_impl {
+                SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+                SearcherImpl::Parallel(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+            }
             Ok(SearchResult {
                 has_match: sink.has_match(),
                 stats: sink.stats().map(|s| s.clone()),
@@ -521,7 +520,10 @@ fn search_path<M: Matcher, W: WriteColor>(
         }
         Printer::JSON(ref mut p) => {
             let mut sink = p.sink_with_path(&matcher, path);
-            searcher.search_path(&matcher, path, &mut sink)?;
+            match searcher_impl {
+                SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+                SearcherImpl::Parallel(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
+            }
             Ok(SearchResult {
                 has_match: sink.has_match(),
                 stats: Some(sink.stats().clone()),

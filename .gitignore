@@ -9,6 +9,7 @@ target
 /deployment
 /.idea
 /.DS_Store
+/tmp
 
 # Snapcraft files
 stage

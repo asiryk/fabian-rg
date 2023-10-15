@@ -89,7 +89,7 @@ pub use crate::{
         BinaryDetection, ConfigError, Encoding, MmapChoice, Searcher,
         SearcherBuilder,
     },
-    searcher_parallel::ParallelSearcher,
+    parallel_searcher::ParallelSearcher,
     sink::{
         sinks, Sink, SinkContext, SinkContextKind, SinkError, SinkFinish,
         SinkMatch,
@@ -101,8 +101,8 @@ mod macros;
 
 mod line_buffer;
 mod lines;
+mod parallel_searcher;
 mod searcher;
-mod searcher_parallel;
 mod sink;
 #[cfg(test)]
 mod testutil;
