@@ -1,4 +1,5 @@
 use std::io;
+use std::sync::{Arc, Mutex};
 
 use grep_matcher::LineTerminator;
 
@@ -325,6 +326,89 @@ impl<S: Sink + ?Sized> Sink for Box<S> {
         sink_finish: &SinkFinish,
     ) -> Result<(), S::Error> {
         (**self).finish(searcher, sink_finish)
+    }
+}
+
+impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
+    type Error = S::Error;
+
+    #[inline]
+    fn matched(
+        &mut self,
+        searcher: &Searcher,
+        mat: &SinkMatch<'_>,
+    ) -> Result<bool, S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.matched(searcher, mat)
+    }
+
+    #[inline]
+    fn context(
+        &mut self,
+        searcher: &Searcher,
+        context: &SinkContext<'_>,
+    ) -> Result<bool, S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.context(searcher, context)
+    }
+
+    #[inline]
+    fn context_break(
+        &mut self,
+        searcher: &Searcher,
+    ) -> Result<bool, S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.context_break(searcher)
+    }
+
+    #[inline]
+    fn binary_data(
+        &mut self,
+        searcher: &Searcher,
+        binary_byte_offset: u64,
+    ) -> Result<bool, S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.binary_data(searcher, binary_byte_offset)
+    }
+
+    #[inline]
+    fn begin(&mut self, searcher: &Searcher) -> Result<bool, S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.begin(searcher)
+    }
+
+    #[inline]
+    fn finish(
+        &mut self,
+        searcher: &Searcher,
+        sink_finish: &SinkFinish,
+    ) -> Result<(), S::Error> {
+        let mut lock = self.lock();
+        let mut lock = match lock {
+            Ok(v) => v,
+            Err(e) => e.into_inner()
+        };
+        lock.finish(searcher, sink_finish)
     }
 }
 
