@@ -41,6 +41,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bytesize"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3e368af43e418a04d52505cf3dbc23dda4e3407ae2fa99fd0e4f308ce546acc"
+
+[[package]]
 name = "cc"
 version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -233,6 +239,8 @@ name = "grep-searcher"
 version = "0.1.11"
 dependencies = [
  "bstr",
+ "bytesize",
+ "crossbeam-deque",
  "encoding_rs",
  "encoding_rs_io",
  "grep-matcher",

@@ -338,7 +338,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
         searcher: &Searcher,
         mat: &SinkMatch<'_>,
     ) -> Result<bool, S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()
@@ -352,7 +352,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
         searcher: &Searcher,
         context: &SinkContext<'_>,
     ) -> Result<bool, S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()
@@ -365,7 +365,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
         &mut self,
         searcher: &Searcher,
     ) -> Result<bool, S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()
@@ -379,7 +379,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
         searcher: &Searcher,
         binary_byte_offset: u64,
     ) -> Result<bool, S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()
@@ -389,7 +389,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
 
     #[inline]
     fn begin(&mut self, searcher: &Searcher) -> Result<bool, S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()
@@ -403,7 +403,7 @@ impl<S: Sink + ?Sized> Sink for Arc<Mutex<S>> {
         searcher: &Searcher,
         sink_finish: &SinkFinish,
     ) -> Result<(), S::Error> {
-        let mut lock = self.lock();
+        let lock = self.lock();
         let mut lock = match lock {
             Ok(v) => v,
             Err(e) => e.into_inner()

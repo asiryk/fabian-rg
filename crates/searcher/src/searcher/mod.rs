@@ -22,10 +22,13 @@ use crate::{
 };
 
 pub use self::mmap::MmapChoice;
+pub use parallel_searcher::ParallelSearcher;
 
 mod core;
 mod glue;
 mod mmap;
+mod parallel_searcher;
+
 
 /// We use this type alias since we want the ergonomics of a matcher's `Match`
 /// type, but in practice, we use it for arbitrary ranges, so give it a more

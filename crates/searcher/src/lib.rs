@@ -87,9 +87,8 @@ pub use crate::{
     lines::{LineIter, LineStep},
     searcher::{
         BinaryDetection, ConfigError, Encoding, MmapChoice, Searcher,
-        SearcherBuilder,
+        SearcherBuilder, ParallelSearcher,
     },
-    parallel_searcher::ParallelSearcher,
     sink::{
         sinks, Sink, SinkContext, SinkContextKind, SinkError, SinkFinish,
         SinkMatch,
@@ -101,7 +100,6 @@ mod macros;
 
 mod line_buffer;
 mod lines;
-mod parallel_searcher;
 mod searcher;
 mod sink;
 #[cfg(test)]

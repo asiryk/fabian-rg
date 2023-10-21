@@ -271,7 +271,7 @@ impl Args {
         let printer = self.printer(wtr)?;
         let searcher_impl = if matches.is_present("parallel-searcher") {
             log::debug!("[ripgrep] using experimental parallel searcher");
-            SearcherImpl::Parallel(ParallelSearcher::new())
+            SearcherImpl::Parallel(ParallelSearcher::new(self.0.threads, matches.searcher(self.paths())?))
         } else {
             SearcherImpl::Default(matches.searcher(self.paths())?)
         };

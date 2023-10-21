@@ -21,6 +21,8 @@ grep-matcher = { version = "0.1.6", path = "../matcher" }
 log = "0.4.20"
 memchr = "2.6.3"
 memmap = { package = "memmap2", version = "0.8.0" }
+crossbeam-deque = "0.8.3"
+bytesize = "1.2.0"
 
 [dev-dependencies]
 grep-regex = { version = "0.1.11", path = "../regex" }

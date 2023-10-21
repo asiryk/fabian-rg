@@ -534,7 +534,7 @@ pub enum LineMatchKind {
 /// top of `find_at` and `new_captures`. It is not uncommon for implementations
 /// to be able to provide faster variants of some methods; in those cases,
 /// simply override the default implementation.
-pub trait Matcher {
+pub trait Matcher: Clone + Send + Sync {
     /// The concrete type of capturing groups used for this matcher.
     ///
     /// If this implementation does not support capturing groups, then set
