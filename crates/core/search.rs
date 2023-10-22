@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use std::sync::{Arc, Mutex};
 
 use {
     grep::{
@@ -20,6 +21,7 @@ use {
 
 #[cfg(feature = "pcre2")]
 use grep::pcre2::RegexMatcher as PCRE2RegexMatcher;
+use grep::printer::SimpleSink;
 use grep::searcher::SearcherImpl;
 
 use crate::subject::Subject;
@@ -500,12 +502,11 @@ fn search_path<M: Matcher, W: WriteColor>(
             let mut sink = p.sink_with_path(&matcher, path);
             match searcher_impl {
                 SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
-                // SearcherImpl::Parallel(searcher) => {
-                //     let m = matcher.clone();
-                //     let s = Arc::new(Mutex::new(sink));
-                //     searcher.search_path(m, path, )?
-                // },
-                _ => todo!()
+                SearcherImpl::Parallel(searcher) => {
+                    let m = matcher.clone();
+                    let s = Arc::new(Mutex::new(SimpleSink::new()));
+                    searcher.search_path(m, path, s)?
+                },
             }
             Ok(SearchResult {
                 has_match: sink.has_match(),
@@ -516,8 +517,7 @@ fn search_path<M: Matcher, W: WriteColor>(
             let mut sink = p.sink_with_path(&matcher, path);
             match searcher_impl {
                 SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
-                // SearcherImpl::Parallel(searcher) => searcher.search_path(matcher.clone(), path, Arc::new(Mutex::new(sink)))?,
-                _ => todo!()
+                _ => unimplemented!()
             }
             Ok(SearchResult {
                 has_match: sink.has_match(),
@@ -528,8 +528,7 @@ fn search_path<M: Matcher, W: WriteColor>(
             let mut sink = p.sink_with_path(&matcher, path);
             match searcher_impl {
                 SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
-                // SearcherImpl::Parallel(searcher) => searcher.search_path(matcher.clone(), path, Arc::new(Mutex::new(sink)))?,
-                _ => todo!()
+                _ => unimplemented!()
             }
             Ok(SearchResult {
                 has_match: sink.has_match(),

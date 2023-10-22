@@ -49,14 +49,16 @@ impl ParallelSearcher {
         );
         std::thread::scope(|s| {
             let handles: Vec<_> = queues.into_iter()
-                .map(|queue| BufferedWorker::new(
-                    &file,
-                    queue,
-                    Vec::with_capacity(buf_size),
-                    self.searcher.clone(),
-                    &matcher,
-                    Arc::clone(&sink),
-                ))
+                .map(|queue| {
+                    BufferedWorker::new(
+                        &file,
+                        queue,
+                        std::iter::repeat(0).take(buf_size).collect(),
+                        self.searcher.clone(),
+                        &matcher,
+                        Arc::clone(&sink),
+                    )
+                })
                 .map(|worker| s.spawn(|| worker.run()))
                 .collect();
 
@@ -212,7 +214,7 @@ mod worker {
         fn fill_buffer(&mut self) -> Option<usize> {
             let range = self.recv()?;
             let buffer = self.buffer.get_mut();
-            buffer.clear();
+            buffer.fill(0);
             let n = self.file.read_at(buffer, range.start).ok()?;
             Some(n)
         }

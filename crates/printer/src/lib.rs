@@ -68,6 +68,7 @@ pub use crate::{
     },
     path::{PathPrinter, PathPrinterBuilder},
     standard::{Standard, StandardBuilder, StandardSink},
+    simple_sink::SimpleSink,
     stats::Stats,
     summary::{Summary, SummaryBuilder, SummaryKind, SummarySink},
 };
@@ -99,6 +100,7 @@ mod json;
 mod jsont;
 mod path;
 mod standard;
+mod simple_sink;
 mod stats;
 mod summary;
 mod util;
