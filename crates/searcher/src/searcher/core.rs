@@ -599,7 +599,7 @@ impl<'s, M: Matcher, S: Sink> Core<'s, M, S> {
             let slice = &buf[self.last_line_counted..upto];
             let count = lines::count(slice, self.config.line_term.as_byte());
             *line_number += count;
-            log::trace!("[ripgrep] count lines: count={}, line_number={}", count, line_number);
+            // log::trace!("[ripgrep] count lines: count={}, line_number={}", count, line_number);
             self.last_line_counted = upto;
         }
     }
