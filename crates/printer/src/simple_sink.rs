@@ -23,3 +23,22 @@ impl Sink for SimpleSink {
         Ok(true)
     }
 }
+
+///
+pub struct EmptySink {}
+
+impl EmptySink {
+
+    ///
+    pub fn new() -> Self {
+        EmptySink {}
+    }
+}
+
+impl Sink for EmptySink {
+    type Error = io::Error;
+
+    fn matched(&mut self, _searcher: &Searcher, _mat: &SinkMatch<'_>) -> Result<bool, Self::Error> {
+        Ok(true)
+    }
+}

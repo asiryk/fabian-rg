@@ -68,7 +68,7 @@ pub use crate::{
     },
     path::{PathPrinter, PathPrinterBuilder},
     standard::{Standard, StandardBuilder, StandardSink},
-    simple_sink::SimpleSink,
+    simple_sink::{SimpleSink, EmptySink},
     stats::Stats,
     summary::{Summary, SummaryBuilder, SummaryKind, SummarySink},
 };
