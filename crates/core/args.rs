@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use std::borrow::Cow;
 
 use {
     clap,
@@ -360,8 +361,8 @@ impl Args {
     /// It is important that that precondition is fulfilled, since this function
     /// consumes the subjects iterator, and is therefore a blocking function.
     pub fn sort_by_stat<I>(&self, subjects: I) -> Vec<Subject>
-    where
-        I: Iterator<Item = Subject>,
+        where
+            I: Iterator<Item=Subject>,
     {
         let sorter = match self.matches().sort_by() {
             Ok(v) => v,
@@ -602,7 +603,12 @@ impl ArgMatches {
     /// then this returns an error.
     fn matcher(&self, patterns: &[String]) -> Result<PatternMatcher> {
         if self.is_present("fabian-matcher") {
-            self.matcher_engine("fabian", patterns)
+            let _v = &self.0;
+            let matcher = &self.0.value_of_lossy("fabian-matcher")
+                .unwrap_or(Cow::Owned("memchr".into()));
+            let matcher = format!("fabian:{}", matcher);
+
+            self.matcher_engine(&matcher, patterns)
         } else if self.is_present("pcre2") {
             self.matcher_engine("pcre2", patterns)
         } else if self.is_present("auto-hybrid-regex") {
@@ -624,14 +630,24 @@ impl ArgMatches {
         patterns: &[String],
     ) -> Result<PatternMatcher> {
         match engine {
-            "fabian" => {
+            x if x.contains("fabian") => {
                 match patterns.get(0) {
                     Some(pattern) => {
                         let pattern = Arc::new(pattern.as_bytes().to_vec());
-                        let matcher = FabianMatcher::new(&pattern);
-                        log::trace!("[ripgrep] using experimental fabian matcher");
-                        Ok(PatternMatcher::FabianMatcher(matcher))
-                    },
+                        let engine: Result<FabianMatcher> = match x {
+                            "fabian:naive" => Ok(FabianMatcher::naive(&pattern)),
+                            "fabian:rabin-karp" => Ok(FabianMatcher::rabin_karp(&pattern)),
+                            "fabian:memchr" => Ok(FabianMatcher::memchr(&pattern)),
+                            _ => Err(From::from(format!(
+                                "valid fabian matchers are: \
+                                [naive, rabin-karp, memchr]"
+                            )))
+                        };
+                        engine.map(|e| {
+                            log::trace!("[ripgrep] using experimental {} matcher", x);
+                            PatternMatcher::FabianMatcher(e)
+                        })
+                    }
                     None => Err(From::from(
                         format!("fabian matcher can't handle empty pattern")
                     ))
@@ -1672,8 +1688,8 @@ impl ArgMatches {
                 || self.is_present("vimgrep")
                 || paths.len() > 1
                 || paths
-                    .get(0)
-                    .map_or(false, |p| p != path_stdin && p.is_dir())
+                .get(0)
+                .map_or(false, |p| p != path_stdin && p.is_dir())
         }
     }
 }
@@ -1843,9 +1859,9 @@ fn sort_by_option<T: Ord>(
 /// corresponding output is printed and the current process is exited
 /// successfully.
 fn clap_matches<I, T>(args: I) -> Result<clap::ArgMatches<'static>>
-where
-    I: IntoIterator<Item = T>,
-    T: Into<OsString> + Clone,
+    where
+        I: IntoIterator<Item=T>,
+        T: Into<OsString> + Clone,
 {
     let err = match app::app().get_matches_from_safe(args) {
         Ok(matches) => return Ok(matches),
@@ -1884,7 +1900,7 @@ fn current_dir() -> Result<PathBuf> {
          --- did your CWD get deleted?",
         err,
     )
-    .into())
+        .into())
 }
 
 /// Retrieves the hostname that ripgrep should use wherever a hostname is
@@ -1898,7 +1914,7 @@ fn current_dir() -> Result<PathBuf> {
 /// The purpose of `bin` is to make it possible for end users to override how
 /// ripgrep determines the hostname.
 fn hostname(bin: Option<&OsStr>) -> Option<String> {
-    let Some(bin) = bin else { return platform_hostname() };
+    let Some(bin) = bin else { return platform_hostname(); };
     let bin = match grep::cli::resolve_binary(bin) {
         Ok(bin) => bin,
         Err(err) => {
@@ -1991,11 +2007,11 @@ fn wsl_prefix() -> Option<String> {
 /// Tries to assign a timestamp to every `Subject` in the vector to help with
 /// sorting Subjects by time.
 fn load_timestamps<G>(
-    subjects: impl Iterator<Item = Subject>,
+    subjects: impl Iterator<Item=Subject>,
     get_time: G,
 ) -> Vec<(Option<std::time::SystemTime>, Subject)>
-where
-    G: Fn(&std::fs::Metadata) -> io::Result<std::time::SystemTime>,
+    where
+        G: Fn(&std::fs::Metadata) -> io::Result<std::time::SystemTime>,
 {
     subjects
         .map(|s| (s.path().metadata().and_then(|m| get_time(&m)).ok(), s))

@@ -2524,9 +2524,10 @@ This overrides the --context, --after-context and --before-context flags.
 
 fn flag_fabian(args: &mut Vec<RGArg>) {
     const SHORT: &str = "Enable experimental Fabian matchers.";
-    let arg = RGArg::switch("fabian-matcher")
+    let arg = RGArg::flag("fabian-matcher", "NAME")
         .help(SHORT)
         .long_help(SHORT)
+        .possible_values(&["naive", "rabin-karp", "memchr"])
         .overrides("pcre2")
         .overrides("auto-hybrid-regex")
         .overrides("no-auto-hybrid-regex")
