@@ -87,7 +87,7 @@ pub use crate::{
     lines::{LineIter, LineStep},
     searcher::{
         BinaryDetection, ConfigError, Encoding, MmapChoice, Searcher,
-        SearcherBuilder, ParallelSearcher,
+        SearcherBuilder, ParallelWorkStealingSearcher, ParallelDefaultSearcher
     },
     sink::{
         sinks, Sink, SinkContext, SinkContextKind, SinkError, SinkFinish,
@@ -111,5 +111,7 @@ pub enum SearcherImpl {
     /// Single-threaded file searcher
     Default(Searcher),
     /// Parallel file searcher
-    Parallel(ParallelSearcher),
+    ParallelWorkStealing(ParallelWorkStealingSearcher),
+    /// docs
+    ParallelDefault(ParallelDefaultSearcher),
 }

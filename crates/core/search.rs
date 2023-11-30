@@ -502,7 +502,12 @@ fn search_path<M: Matcher, W: WriteColor>(
             let mut sink = p.sink_with_path(&matcher, path);
             match searcher_impl {
                 SearcherImpl::Default(searcher) => searcher.search_path(&matcher, path, &mut sink)?,
-                SearcherImpl::Parallel(searcher) => {
+                SearcherImpl::ParallelDefault(searcher) => {
+                    let m = matcher.clone();
+                    let s = Arc::new(Mutex::new(SimpleSink::new()));
+                    searcher.search_path(m, path, s)?
+                },
+                SearcherImpl::ParallelWorkStealing(searcher) => {
                     let m = matcher.clone();
                     let s = Arc::new(Mutex::new(SimpleSink::new()));
                     searcher.search_path(m, path, s)?

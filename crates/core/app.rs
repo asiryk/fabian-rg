@@ -2537,9 +2537,10 @@ fn flag_fabian(args: &mut Vec<RGArg>) {
 
 fn flag_parallel_searcher(args: &mut Vec<RGArg>) {
     const SHORT: &str = "Enable experimental search for single file in parallel";
-    let arg = RGArg::switch("parallel-searcher")
+    let arg = RGArg::flag("parallel-searcher", "NAME")
         .help(SHORT)
         .long_help(SHORT)
+        .possible_values(&["default", "work-stealing"])
         .overrides("pcre2-version")
         .overrides("type-list")
         .overrides("files");

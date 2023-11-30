@@ -1,26 +1,24 @@
 use std::fs::File;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-
 use bytesize::ByteSize;
-
 use grep_matcher::Matcher;
-
 use crate::{Searcher, Sink, SinkError};
-use crate::searcher::parallel_searcher::work_stealing::WorkStealingQueue;
-use crate::searcher::parallel_searcher::worker::{BufferedWorker, split_into_ranges};
+use crate::searcher::parallel_default_searcher::work_pool::WorkPool;
+use crate::searcher::parallel_default_searcher::worker::{BufferedWorker, split_into_ranges};
 
 /// Searcher that performs it's search using multithreading
 #[derive(Debug)]
-pub struct ParallelSearcher {
+pub struct ParallelDefaultSearcher {
     threads: usize,
     searcher: Searcher,
 }
 
-impl ParallelSearcher {
+/// docs
+impl ParallelDefaultSearcher {
     /// Create new parallel searcher
     pub fn new(threads: usize, searcher: Searcher) -> Self {
-        ParallelSearcher { threads, searcher }
+        ParallelDefaultSearcher { threads, searcher }
     }
 
     /// Execute a search over the file with the given path and write the
@@ -43,9 +41,9 @@ impl ParallelSearcher {
         let file = Arc::new(file);
 
         let ranges = split_into_ranges(file_len, buf_size as u64);
-        let queues = WorkStealingQueue::new_for_each_thread(
+        let queues = WorkPool::split_into_chunks(
             self.threads.min(ranges.len()),
-            ranges
+            ranges,
         );
         std::thread::scope(|s| {
             let handles: Vec<_> = queues.into_iter()
@@ -90,71 +88,28 @@ mod tests {
     }
 }
 
-mod work_stealing {
-    use std::sync::Arc;
+mod work_pool {
+    use std::collections::VecDeque;
 
-    use crossbeam_deque::{Stealer, Worker as Deque};
-
-    /// A work-stealing stack.
-    #[derive(Debug)]
-    pub struct WorkStealingQueue<T> {
-        /// This thread's index.
-        index: usize,
-        /// The thread-local stack.
-        deque: Deque<T>,
-        /// The work stealers.
-        stealers: Arc<[Stealer<T>]>,
+    pub struct WorkPool<T> {
+        work: VecDeque<T>,
     }
 
-    impl<T> WorkStealingQueue<T> {
-        /// Create a work-stealing queue for each thread.
-        pub fn new_for_each_thread(threads: usize, init: Vec<T>) -> Vec<WorkStealingQueue<T>> {
-            let deques: Vec<Deque<T>> =
-                std::iter::repeat_with(Deque::new_fifo).take(threads).collect();
-            let stealers = Arc::<[Stealer<T>]>::from(
-                deques.iter().map(Deque::stealer).collect::<Vec<_>>(),
-            );
-            let stacks: Vec<WorkStealingQueue<T>> = deques
-                .into_iter()
-                .enumerate()
-                .map(|(index, deque)| WorkStealingQueue {
-                    index,
-                    deque,
-                    stealers: stealers.clone(),
-                })
-                .collect();
-            // Distribute the initial messages.
-            init.into_iter()
-                .zip(stacks.iter().cycle())
-                .for_each(|(m, s)| {
-                    s.push(m)
-                });
-            stacks
+    impl<T> WorkPool<T> {
+        pub fn split_into_chunks(threads: usize, init: Vec<T>) -> Vec<WorkPool<T>> where T: Clone {
+            // Calculate the size of each chunk
+            let chunk_size = init.len() / threads + if init.len() % threads > 0 { 1 } else { 0 };
+
+            // Split the vector into chunks and collect them into a new vector
+            init
+                .chunks(chunk_size)
+                .map(|chunk| VecDeque::from(chunk.to_vec()))
+                .map(|v| WorkPool { work: v })
+                .collect()
         }
 
-        /// Push a message.
-        pub fn push(&self, msg: T) {
-            self.deque.push(msg);
-        }
-
-        /// Pop a message.
-        pub fn pop(&self) -> Option<T> {
-            self.deque.pop().or_else(|| self.steal())
-        }
-
-        /// Steal a message from another queue.
-        pub fn steal(&self) -> Option<T> {
-            // For fairness, try to steal from index - 1, then index - 2, ... 0,
-            // then wrap around to len - 1, len - 2, ... index + 1.
-            let (left, right) = self.stealers.split_at(self.index);
-            // Don't steal from ourselves
-            let right = &right[1..];
-
-            left.iter()
-                .rev()
-                .chain(right.iter().rev())
-                .map(|s| s.steal_batch_and_pop(&self.deque))
-                .find_map(|s| s.success())
+        pub fn pop(&mut self) -> Option<T> {
+            self.work.pop_front()
         }
     }
 }
@@ -171,11 +126,11 @@ mod worker {
     use grep_matcher::Matcher;
 
     use crate::{Searcher, Sink};
-    use crate::searcher::parallel_searcher::work_stealing::WorkStealingQueue;
+    use crate::searcher::parallel_default_searcher::work_pool::WorkPool;
 
     pub struct BufferedWorker<M: Matcher, S: Sink> {
         file: Arc<File>,
-        queue: WorkStealingQueue<Range<u64>>,
+        queue: WorkPool<Range<u64>>,
         buffer: Cursor<Vec<u8>>,
         searcher: Searcher,
         matcher: M,
@@ -185,7 +140,7 @@ mod worker {
     impl<M: Matcher, S: Sink> BufferedWorker<M, S> {
         pub fn new(
             file: &Arc<File>,
-            queue: WorkStealingQueue<Range<u64>>,
+            queue: WorkPool<Range<u64>>,
             buffer: Vec<u8>,
             searcher: Searcher,
             matcher: M,
@@ -220,7 +175,7 @@ mod worker {
         }
 
         /// Receive work.
-        fn recv(&self) -> Option<Range<u64>> {
+        fn recv(&mut self) -> Option<Range<u64>> {
             self.queue.pop()
         }
     }
@@ -246,7 +201,7 @@ mod worker {
     mod tests {
         use bytesize::ByteSize;
 
-        use crate::searcher::parallel_searcher::worker::split_into_ranges;
+        use crate::searcher::parallel_default_searcher::worker::split_into_ranges;
 
         #[test]
         fn test_split_into_ranges() {

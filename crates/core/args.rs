@@ -41,7 +41,7 @@ use grep::pcre2::{
     RegexMatcher as PCRE2RegexMatcher,
     RegexMatcherBuilder as PCRE2RegexMatcherBuilder,
 };
-use grep::searcher::{ParallelSearcher, SearcherImpl};
+use grep::searcher::{ParallelWorkStealingSearcher, SearcherImpl, ParallelDefaultSearcher};
 
 use crate::{
     app, config,
@@ -271,8 +271,15 @@ impl Args {
         let matcher = self.matcher().clone();
         let printer = self.printer(wtr)?;
         let searcher_impl = if matches.is_present("parallel-searcher") {
-            log::debug!("[ripgrep] using experimental parallel searcher");
-            SearcherImpl::Parallel(ParallelSearcher::new(self.0.threads, matches.searcher(self.paths())?))
+            let searcher = format!("{}", matches.0.value_of_lossy("parallel-searcher")
+                .unwrap_or(Cow::Owned("default".into())));
+            if "default".eq(&searcher) {
+                log::debug!("[ripgrep] using fabian parallel searcher (default)");
+                SearcherImpl::ParallelDefault(ParallelDefaultSearcher::new(self.0.threads, matches.searcher(self.paths())?))
+            } else {
+                log::debug!("[ripgrep] using fabian parallel searcher (work-stealing)");
+                SearcherImpl::ParallelWorkStealing(ParallelWorkStealingSearcher::new(self.0.threads, matches.searcher(self.paths())?))
+            }
         } else {
             SearcherImpl::Default(matches.searcher(self.paths())?)
         };
@@ -602,12 +609,17 @@ impl ArgMatches {
     /// If there was a problem building the matcher (e.g., a syntax error),
     /// then this returns an error.
     fn matcher(&self, patterns: &[String]) -> Result<PatternMatcher> {
-        if self.is_present("fabian-matcher") {
+        if self.is_present("fabian-matcher") || self.is_present("parallel-searcher") {
             let _v = &self.0;
-            let matcher = &self.0.value_of_lossy("fabian-matcher")
-                .unwrap_or(Cow::Owned("memchr".into()));
-            let matcher = format!("fabian:{}", matcher);
-
+            let matcher = self.value_of_lossy("fabian-matcher")
+                .unwrap_or("memchr".into());
+            let searcher = &self.value_of_lossy("parallel-searcher")
+                .unwrap_or("default".into());
+            let matcher = if "work-stealing".eq(searcher) && self.threads().unwrap_or(1) > 1 {
+                "fabian:naive".into()
+            } else {
+                format!("fabian:{}", matcher)
+            };
             self.matcher_engine(&matcher, patterns)
         } else if self.is_present("pcre2") {
             self.matcher_engine("pcre2", patterns)

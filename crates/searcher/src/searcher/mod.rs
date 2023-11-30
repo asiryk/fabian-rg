@@ -22,12 +22,14 @@ use crate::{
 };
 
 pub use self::mmap::MmapChoice;
-pub use parallel_searcher::ParallelSearcher;
+pub use parallel_work_stealing_searcher::ParallelWorkStealingSearcher;
+pub use parallel_default_searcher::ParallelDefaultSearcher;
 
 mod core;
 mod glue;
 mod mmap;
-mod parallel_searcher;
+mod parallel_work_stealing_searcher;
+mod parallel_default_searcher;
 
 
 /// We use this type alias since we want the ergonomics of a matcher's `Match`
